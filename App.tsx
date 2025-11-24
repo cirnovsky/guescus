@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GiscusConfig, Discussion, UserSession } from './types';
 import { fetchDiscussion, createDiscussion, fetchViewer, addComment, addReply, toggleReaction } from './services/githubService';
 import { summarizeComments } from './services/geminiService';
@@ -25,23 +26,21 @@ const App: React.FC = () => {
     };
   });
 
+  // Ref for resizing
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // 2. Load Theme CSS
   useEffect(() => {
     const theme = config.theme;
     if (!theme) return;
 
-    // Remove existing theme link
     const existingLink = document.getElementById('giscus-theme');
     if (existingLink) existingLink.remove();
 
-    // Map common Giscus themes to CSS files or define vars
     const link = document.createElement('link');
     link.id = 'giscus-theme';
     link.rel = 'stylesheet';
     
-    // In a real deployment, these would point to hosted CSS files like https://giscus.app/themes/dark.css
-    // For this demo, we can just use the config to toggle a class on the HTML element if we had local themes,
-    // or load the actual Giscus CDN themes which are compatible with our variable structure.
     if (theme.startsWith('http')) {
         link.href = theme;
     } else {
@@ -50,6 +49,23 @@ const App: React.FC = () => {
     
     document.head.appendChild(link);
   }, [config.theme]);
+
+  // 3. Auto-Resize Iframe Logic
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height;
+        // Send message to parent window (the blog hosting this)
+        window.parent.postMessage({ type: 'resize', height: height + 20 }, '*');
+      }
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
   
   const [discussion, setDiscussion] = useState<Discussion | null>(null);
   const [session, setSession] = useState<UserSession | null>(null);
@@ -84,9 +100,6 @@ const App: React.FC = () => {
       setInitLoading(true);
       const data = await fetchDiscussion(config, tokenToUse);
       setDiscussion(data);
-      // If data is null here, it means no discussion exists yet. 
-      // We do NOT show an error, we just show "0 comments".
-      // We will create the discussion when the first comment is posted.
       setError(null);
     } catch (err: any) {
       setError(err.message || "Failed to load discussion.");
@@ -139,25 +152,21 @@ const App: React.FC = () => {
       let targetDiscussionId = discussion?.id;
 
       if (!targetDiscussionId) {
-          // Automatic Creation
           if (!config.repoId || !config.categoryId) {
               throw new Error("Cannot create discussion: Missing repoId or categoryId in configuration.");
           }
           const newDisc = await createDiscussion(config, token);
           if (!newDisc) throw new Error("Failed to create discussion.");
           targetDiscussionId = newDisc.id;
-          // Optimistically set discussion to avoid full reload flickering
           setDiscussion(newDisc); 
       }
 
-      // 2. Post Comment or Reply
       if (replyTo) {
           await addReply(replyTo.id, body, token);
       } else {
           await addComment(targetDiscussionId, body, token);
       }
       
-      // Reset and Reload
       setReplyTo(null);
       await loadData();
     } catch (e: any) {
@@ -176,7 +185,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="w-full mx-auto p-2 min-h-[300px]">
+    <div ref={containerRef} className="w-full mx-auto p-2 min-h-[300px]">
       
       {/* Error Banner */}
       {error && (
