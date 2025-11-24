@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gist-Cus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // Map Tailwind to Giscus CSS variables for theme compatibility
+              canvas: {
+                default: 'var(--color-canvas-default)',
+                overlay: 'var(--color-canvas-overlay)',
+              },
+              border: {
+                default: 'var(--color-border-default)',
+                muted: 'var(--color-border-muted)',
+              },
+              text: {
+                primary: 'var(--color-fg-default)',
+                secondary: 'var(--color-fg-muted)',
+              },
+              btn: {
+                primary: 'var(--color-btn-primary-bg)',
+                text: 'var(--color-btn-primary-text)',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      :root {
+        /* Default Light Theme (matches GitHub Light) */
+        --color-canvas-default: #ffffff;
+        --color-canvas-overlay: #ffffff;
+        --color-border-default: #d0d7de;
+        --color-border-muted: #d8dee4;
+        --color-fg-default: #24292f;
+        --color-fg-muted: #57606a;
+        --color-btn-primary-bg: #2da44e;
+        --color-btn-primary-text: #ffffff;
+        --color-scale-blue-1: #b6e3ff;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        background-color: transparent; /* Transparent for iframe usage */
+        color: var(--color-fg-default);
+      }
+
+      /* Reaction Button Styles mimicking Giscus/GitHub */
+      .reaction-btn {
+        background-color: transparent;
+        border: 1px solid transparent;
+        border-radius: 100px;
+        color: var(--color-fg-muted);
+        transition: 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+      }
+      .reaction-btn:hover {
+        background-color: var(--color-border-muted);
+      }
+      .reaction-btn.reacted {
+        background-color: var(--color-scale-blue-1);
+        border-color: transparent;
+        color: #0969da;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

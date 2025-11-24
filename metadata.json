@@ -1,0 +1,5 @@
+{
+  "name": "guescus",
+  "description": "A lightweight, privacy-focused commenting system backed by GitHub Discussions. Supports GitHub login and anonymous guest commenting with AI-powered features.",
+  "requestFramePermissions": []
+}
