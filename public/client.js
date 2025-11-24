@@ -1,6 +1,22 @@
 
 (function() {
-  const script = document.currentScript;
+  // Try to find the script tag that loaded this code
+  let script = document.currentScript;
+  
+  // Fallback: If currentScript is null (can happen in some async contexts), try to find by specific ID if user provided one,
+  // or find the last script tag with the correct src format.
+  if (!script) {
+    const scripts = document.querySelectorAll('script[src*="/client.js"]');
+    if (scripts.length > 0) {
+      script = scripts[scripts.length - 1];
+    }
+  }
+
+  if (!script) {
+    console.error("Guescus: Could not identify the script tag. Please ensure the script is loaded correctly.");
+    return;
+  }
+
   const attributes = script.dataset;
   const params = new URLSearchParams();
 
@@ -10,9 +26,14 @@
   });
 
   // Calculate the origin (where this React app is hosted)
-  // If the script is loaded from https://my-app.vercel.app/client.js, the origin is https://my-app.vercel.app
-  const srcUrl = new URL(script.src);
-  const origin = srcUrl.origin;
+  let origin;
+  try {
+      const srcUrl = new URL(script.src);
+      origin = srcUrl.origin;
+  } catch (e) {
+      console.error("Guescus: Invalid script source URL.");
+      return;
+  }
 
   // Create the Iframe
   const iframe = document.createElement('iframe');
@@ -23,6 +44,7 @@
   iframe.style.border = 'none';
   iframe.style.minHeight = '150px'; // Prevent collapse while loading
   iframe.title = 'Comments';
+  iframe.setAttribute('scrolling', 'no'); // Prefer resize over scroll
   
   // Resizing logic: Listen for messages from the React App to resize height
   window.addEventListener('message', (event) => {
