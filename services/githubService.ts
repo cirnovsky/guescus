@@ -48,6 +48,92 @@ export const createDiscussion = async (config: GiscusConfig, token: string): Pro
 };
 
 /**
+ * Fetches the discussion using its GraphQL ID.
+ * This is strongly consistent and preferred over search when the ID is known.
+ */
+export const fetchDiscussionById = async (discussionId: string, token: string): Promise<Discussion | null> => {
+  const query = `
+    query($id: ID!) {
+      node(id: $id) {
+        ... on Discussion {
+          id
+          number
+          url
+          comments(first: 50) {
+            totalCount
+            nodes {
+              id
+              createdAt
+              body
+              bodyHTML
+              url
+              author {
+                login
+                avatarUrl
+                url
+              }
+              reactionGroups {
+                content
+                users {
+                  totalCount
+                }
+                viewerHasReacted
+              }
+              replies(first: 20) {
+                nodes {
+                  id
+                  createdAt
+                  body
+                  bodyHTML
+                  url
+                  author {
+                    login
+                    avatarUrl
+                    url
+                  }
+                  reactionGroups {
+                    content
+                    users {
+                      totalCount
+                    }
+                    viewerHasReacted
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const response = await fetch(GITHUB_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sanitizeInput(token)}`,
+      },
+      body: JSON.stringify({
+        query,
+        variables: { id: discussionId },
+      }),
+    });
+
+    const json = await response.json();
+    if (json.errors) {
+      console.error('GitHub API Errors:', json.errors);
+      return null;
+    }
+
+    return json.data?.node || null;
+  } catch (error) {
+    console.error("Failed to fetch discussion by ID", error);
+    return null;
+  }
+};
+
+/**
  * Fetches the discussion based on the search term.
  * Note: Giscus logic searches specifically within the repo and category.
  */

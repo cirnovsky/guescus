@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GiscusConfig, Discussion, UserSession } from './types';
-import { fetchDiscussion, createDiscussion, fetchViewer, addComment, addReply, toggleReaction } from './services/githubService';
+import { fetchDiscussion, createDiscussion, fetchViewer, addComment, addReply, toggleReaction, fetchDiscussionById } from './services/githubService';
 import { summarizeComments } from './services/geminiService';
 import { Comment } from './components/Comment';
 import { Composer } from './components/Composer';
@@ -69,6 +68,10 @@ const App: React.FC = () => {
   }, []);
   
   const [discussion, setDiscussion] = useState<Discussion | null>(null);
+  
+  // Keep track of discussion ID in a ref to avoid circular dependencies in loadData
+  const discussionIdRef = useRef<string | null>(null);
+
   const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
@@ -81,8 +84,15 @@ const App: React.FC = () => {
   const [summary, setSummary] = useState<string>('');
   const [loadingSummary, setLoadingSummary] = useState(false);
 
+  // Update ref when discussion updates
+  useEffect(() => {
+    if (discussion?.id) {
+        discussionIdRef.current = discussion.id;
+    }
+  }, [discussion]);
+
   // Initial Data Load
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (specificId?: string) => {
     const tokenToUse = session?.token || BOT_TOKEN;
 
     if (!tokenToUse) {
@@ -98,8 +108,22 @@ const App: React.FC = () => {
     }
 
     try {
-      setInitLoading(true);
-      const data = await fetchDiscussion(config, tokenToUse);
+      // Don't show full loading state if refreshing, only on initial load
+      if (!discussionIdRef.current) setInitLoading(true);
+      
+      let data = null;
+      const targetId = specificId || discussionIdRef.current;
+
+      // 1. If we have an ID, fetch directly (Avoids Search API delay/inconsistency)
+      if (targetId) {
+        data = await fetchDiscussionById(targetId, tokenToUse);
+      }
+
+      // 2. Fallback to Search if no ID yet (First load)
+      if (!data) {
+        data = await fetchDiscussion(config, tokenToUse);
+      }
+
       setDiscussion(data);
       setError(null);
     } catch (err: any) {
@@ -159,7 +183,8 @@ const App: React.FC = () => {
           const newDisc = await createDiscussion(config, token);
           if (!newDisc) throw new Error("Failed to create discussion.");
           targetDiscussionId = newDisc.id;
-          setDiscussion(newDisc); 
+          setDiscussion(newDisc);
+          discussionIdRef.current = newDisc.id; 
       }
 
       if (replyTo) {
@@ -169,7 +194,8 @@ const App: React.FC = () => {
       }
       
       setReplyTo(null);
-      await loadData();
+      // Force reload with the specific ID to bypass search cache
+      await loadData(targetDiscussionId);
     } catch (e: any) {
       alert(e.message);
     } finally {
