@@ -25,10 +25,12 @@
 
   switch (mapping) {
     case 'pathname':
-      term = location.pathname.length < 2 ? 'index' : location.pathname.substr(1).replace(/\.\w+$/, '');
+      // Giscus behavior: use pathname exactly, unless it is root '/' which becomes 'index'
+      term = location.pathname.length < 2 ? 'index' : location.pathname;
       break;
     case 'url':
-      term = location.href;
+      // Giscus behavior: use full URL but strip hash
+      term = location.href.replace(location.hash, "");
       break;
     case 'title':
       term = document.title;

@@ -18,6 +18,7 @@ export const createDiscussion = async (config: GiscusConfig, token: string): Pro
           id
           number
           url
+          title
         }
       }
     }
@@ -65,6 +66,7 @@ export const fetchDiscussionById = async (discussionId: string, token: string): 
           id
           number
           url
+          title
           comments(first: 50) {
             totalCount
             nodes {
@@ -147,16 +149,18 @@ export const fetchDiscussion = async (config: GiscusConfig, token: string): Prom
   if (!config.repo || !config.term) return null;
   
   const [owner, name] = config.repo.split('/');
+  // Search query looks for the term in the title within the specific repo and discussion type
   const searchQuery = `repo:${owner}/${name} "${config.term}" in:title type:discussion`;
 
   const query = `
     query($searchQuery: String!) {
-      search(query: $searchQuery, type: DISCUSSION, first: 1) {
+      search(query: $searchQuery, type: DISCUSSION, first: 10) {
         nodes {
           ... on Discussion {
             id
             number
             url
+            title
             comments(first: 50) {
               totalCount
               nodes {
@@ -227,7 +231,13 @@ export const fetchDiscussion = async (config: GiscusConfig, token: string): Prom
     }
 
     const nodes = json.data?.search?.nodes;
-    return nodes && nodes.length > 0 ? nodes[0] : null;
+    if (nodes && nodes.length > 0) {
+        // Strict matching: Ensure the title matches exactly.
+        // GitHub search is fuzzy, so "foo" finds "foo bar".
+        const exactMatch = nodes.find((n: any) => n.title === config.term);
+        return exactMatch || null;
+    }
+    return null;
   } catch (error) {
     console.error("Failed to fetch discussion", error);
     return null;

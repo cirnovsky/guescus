@@ -34,6 +34,7 @@ export interface Discussion {
   id: string;
   number: number;
   url: string;
+  title: string;
   comments: {
     totalCount: number;
     nodes: CommentNode[];
