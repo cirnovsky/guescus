@@ -1,9 +1,11 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { CommentNode } from "../types";
+import { getEnv } from "../constants";
 
 // Safety check for API Key
 const getClient = () => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = getEnv('API_KEY');
   if (!apiKey) {
     throw new Error("Gemini API Key is missing");
   }

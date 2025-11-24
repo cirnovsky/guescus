@@ -6,8 +6,9 @@ import { summarizeComments } from './services/geminiService';
 import { Comment } from './components/Comment';
 import { Composer } from './components/Composer';
 import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { getEnv } from './constants';
 
-const BOT_TOKEN = process.env.REACT_APP_GITHUB_BOT_TOKEN || process.env.GITHUB_TOKEN || '';
+const BOT_TOKEN = getEnv('GITHUB_TOKEN') || getEnv('GITHUB_BOT_TOKEN');
 
 const App: React.FC = () => {
   // 1. Initialize Config from URL params (Iframe mode) or Defaults
@@ -85,7 +86,7 @@ const App: React.FC = () => {
     const tokenToUse = session?.token || BOT_TOKEN;
 
     if (!tokenToUse) {
-       setError("Configuration Error: No Token available. If hosting, set GITHUB_TOKEN.");
+       setError("Configuration Error: No Token available. If hosting, set GITHUB_TOKEN (or VITE_GITHUB_TOKEN).");
        setInitLoading(false);
        return;
     }
