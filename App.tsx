@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GiscusConfig, Discussion, UserSession } from './types';
 import { fetchDiscussion, createDiscussion, fetchViewer, addComment, addReply, toggleReaction, fetchDiscussionById } from './services/githubService';
@@ -23,6 +24,7 @@ const App: React.FC = () => {
       reactionsEnabled: params.get('reactionsEnabled') === '1',
       emitMetadata: params.get('emitMetadata') === '1',
       strict: params.get('strict') === '1',
+      pageUrl: params.get('pageUrl') || ''
     };
   });
 
@@ -31,23 +33,32 @@ const App: React.FC = () => {
 
   // 2. Load Theme CSS
   useEffect(() => {
-    const theme = config.theme;
-    if (!theme) return;
-
-    const existingLink = document.getElementById('giscus-theme');
-    if (existingLink) existingLink.remove();
-
-    const link = document.createElement('link');
-    link.id = 'giscus-theme';
-    link.rel = 'stylesheet';
+    const updateTheme = (newTheme: string) => {
+        const existingLink = document.getElementById('giscus-theme');
+        if (existingLink) existingLink.remove();
     
-    if (theme.startsWith('http')) {
-        link.href = theme;
-    } else {
-        link.href = `https://giscus.app/themes/${theme}.css`;
-    }
-    
-    document.head.appendChild(link);
+        const link = document.createElement('link');
+        link.id = 'giscus-theme';
+        link.rel = 'stylesheet';
+        
+        if (newTheme.startsWith('http')) {
+            link.href = newTheme;
+        } else {
+            link.href = `https://giscus.app/themes/${newTheme}.css`;
+        }
+        document.head.appendChild(link);
+    };
+
+    updateTheme(config.theme);
+
+    // Listener for theme changes from parent
+    const handleMessage = (event: MessageEvent) => {
+        if (event.data && event.data.setConfig && event.data.setConfig.theme) {
+            updateTheme(event.data.setConfig.theme);
+        }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, [config.theme]);
 
   // 3. Auto-Resize Iframe Logic

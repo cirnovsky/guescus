@@ -1,3 +1,4 @@
+
 export interface GitHubUser {
   login: string;
   avatarUrl: string;
@@ -56,6 +57,7 @@ export interface GiscusConfig {
   reactionsEnabled: boolean;
   emitMetadata: boolean;
   strict: boolean;     // 1 or 0
+  pageUrl?: string;    // The URL of the page hosting the comments
 }
 
 export enum LoginMode {
